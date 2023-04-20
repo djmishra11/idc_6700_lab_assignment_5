@@ -1,0 +1,306 @@
+---
+title: "Lab 5 Assignment"
+author: "Dhananjay"
+date: "2023-03-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Q1. Get the 2011 Energy Rates dataset
+  * You will find the data set here: http://cs.ucf.edu/~wiegand/idc6700/datasets/iouzipcodes2011.csv
+  * The first two lines are comments, starting with the '#' character
+  * The file has a header and the is comma separated
+
+```{r}
+# Loading the required libraries
+library(tidyverse)
+
+# Reading the dataset
+zipCodesData <- read.csv("iouzipcodes2011.csv", header = TRUE, sep = ',', skip = 2)
+head(zipCodesData)
+summary(zipCodesData)
+
+```
+  
+## Q2. Filter and summarize this dataset
+  * Produce a new dataset with the five energy companies from Florida
+  * Summarize the average residential, commercial, and industry rates for each of these over all relevant zip codes
+  * By way of hints, I used the following functions:  filter(), group_by(), summarize(),and melt()
+  
+
+```{r}
+# Loading the required libraries
+library(tidyverse)
+
+# Reading the dataset
+zipCodesData <- read.csv("iouzipcodes2011.csv", header = TRUE, sep = ',', skip = 2)
+
+# Producing a new dataset with five energy companies from Florida
+floridaEnergyCompaniesDataset <- zipCodesData[zipCodesData$state == "FL", ]
+
+# print(floridaEnergyCompaniesDataset)
+
+# summarizing the residential rates by utility_name
+summaryResidentialRate <- aggregate(res_rate ~ utility_name, data = floridaEnergyCompaniesDataset, FUN = mean)
+
+# Summarizing the commercial rates by utility_name
+summaryCommercialRate <- aggregate(comm_rate ~ utility_name, data = floridaEnergyCompaniesDataset, FUN = mean)
+
+# Summarizing the industrial rates by utility_name
+summaryIndustrialRate <- aggregate(ind_rate ~ utility_name, data = floridaEnergyCompaniesDataset, FUN = mean)
+
+# Displaying the resulting summaries
+summaryResidentialRate
+summaryCommercialRate
+summaryIndustrialRate
+
+
+```
+
+
+  
+## Q3. Produce a trellis bar plot
+  * Three panels, one for residential, one for commercial, and one for industry
+  * All five companies represented in each panel
+  * Make sure all plot labels are clear and visible
+  
+  
+```{r}
+# load the necessary packages
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Reading the dataset
+zipCodesData <- read.csv("iouzipcodes2011.csv", header = TRUE, sep = ',', skip = 2)
+
+# Producing a new dataset with five energy companies from Florida
+floridaEnergyCompaniesDataset <- zipCodesData[zipCodesData$state == "FL", ]
+
+# Calculating the average rates by utility_name and rate type
+summarized_data <- floridaEnergyCompaniesDataset %>%
+  group_by(utility_name) %>%
+  summarize(
+    res_rate = mean(res_rate),
+    comm_rate = mean(comm_rate),
+    ind_rate = mean(ind_rate)
+  ) %>%
+  pivot_longer(cols = c("res_rate", "comm_rate", "ind_rate"),
+               names_to = "rate_type",
+               values_to = "avg_rate")
+
+# Defining the color encoding
+colorCode <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2")
+
+# Creating the trellis bar plot
+ggplot(summarized_data, aes(x = utility_name, y = avg_rate, fill = utility_name)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~rate_type, ncol = 1, scales = "free_y") +
+  scale_fill_manual(values = colorCode) +
+  labs(title = "Average Energy Rates for Utility Companies in Florida",
+       x = "Utility Companies", 
+       y = "Average Rate",
+       fill = "Utility Companies Name") +
+  theme(legend.position = "right",
+        legend.direction = "vertical",
+        legend.box = "vertical") +
+  scale_x_discrete(labels = c("FL PL Co", "FL PU Co", "GP Co", "PEF Co", "TE Co"))
+
+```
+
+
+
+  Consider the following demographics dataset for different countries in 2019 for all three questions:
+http://cs.ucf.edu/~wiegand/idc6700/datasets/CountryDemographics2019.csv
+
+
+## Q4. Produce a HeatMap
+  * Produce a heatmap of this, where the different measure labels (e.g., Total Population, Birth Rate, etc.) are one axis, the different  countries are on another axis, and color represents the numeric value.  Be sure to scale the values in each measure properly so that one value doesn't overwhelm the others.  Order the measures along the axis representing measures according to total population, so the largest country is on top.
+  
+
+```{r}
+# load the necessary packages
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+
+# Reading the dataset
+countryDemograhicsData <- read.csv("CountryDemographics2019.csv", header = TRUE, sep = ',')
+
+# Sorting the data frame columns by TotalPopulation
+countryDemograhicsData <- countryDemograhicsData[, c(1, order(-countryDemograhicsData$TotalPopulation)+1)]
+
+# Defining a function for Min-Max Normalization
+minMAxNorm <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+# Applying Min-Max normalization to scale the values in each measure of the data frame
+normalizedDemograhicsData <- as.data.frame(lapply(countryDemograhicsData[,2:9], minMAxNorm))
+normalizedDemograhicsData <- cbind(Country = countryDemograhicsData$Country, normalizedDemograhicsData)
+
+# Melting the normalized data frame into a "long" format suitable for plotting
+meltedDemograhicsData <- melt(normalizedDemograhicsData, id.vars = "Country")
+
+# Setting the plot theme
+theme_set(theme_bw())
+
+# Creating the heatmap plot
+heatmap_plot <- ggplot(meltedDemograhicsData, aes(Country, variable, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "#f6f6f6", high = "#008080") +
+  labs(title = "Normalized Demographics Data for European Countries",
+       x = "Country", 
+       y = "Measure",
+       fill = "Normalized Value") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+
+# Displaying the heatmap plot
+print(heatmap_plot)
+
+
+```
+  
+  
+## Q5. Principal Component Analysis
+  * Consider only the four rate measures (Birth, Mortality,  Life, Infant Mortality).  Perform and plot a principal component analysis of these numeric data.   How many dimensions are needed to explain the overwhelming majority of variance in the data?  What do you think is driving this variance, predominantly and why?
+  
+
+```{r}
+# load the necessary packages
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(plotrix)
+
+# Reading the dataset
+countryDemograhicsData <- read.csv("CountryDemographics2019.csv", header = TRUE, sep = ',')
+
+# Selecting the four rate measures
+measureRates <- countryDemograhicsData[, c("BirthRate", "MortalityRate", "LifeExpectancy", "InfantMortalityRate")]
+#print(measureRates)
+
+# Scaling the data so that each variable has equal weight in PCA
+scaledMeasureRates <- scale(measureRates)
+#print(scaledMeasureRates)
+
+# Performing the PCA
+measureRatesPCA <- prcomp(scaledMeasureRates)
+#print(measureRatesPCA)
+summary(measureRatesPCA)
+
+# Plotting the PCA with biplot
+biplot(measureRatesPCA, scale = 0, cex = 0.6, main = "")
+title("PCA Plot of Measures")
+
+```
+
+
+The result generated shows that PC1 explains 72% of the variance in the data, while PC2 explains 18.16%. PC3 and PC4 explain only 6.66% and 3.18% of the variance, respectively.
+
+Thus, we can say that one dimension (PC1) is enough to explain the overwhelming majority of the variance in the data. This is likely because PC1 captures the overall level of development of the countries, as it is strongly positively correlated with LifeExpectancy and negatively correlated with MortalityRate and InfantMortalityRate. A scree plot can be generated to visualize the amount of variance explained by each principal component.
+
+
+```{r}
+# load the necessary packages
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(plotrix)
+
+# Reading the dataset
+countryDemograhicsData <- read.csv("CountryDemographics2019.csv", header = TRUE, sep = ',')
+
+# Selecting the four rate measures
+measureRates <- countryDemograhicsData[, c("BirthRate", "MortalityRate", "LifeExpectancy", "InfantMortalityRate")]
+#print(measureRates)
+
+# Scaling the data so that each variable has equal weight in PCA
+scaledMeasureRates <- scale(measureRates)
+#print(scaledMeasureRates)
+
+# Performing the PCA
+measureRatesPCA <- prcomp(scaledMeasureRates)
+#print(measureRatesPCA)
+summary(measureRatesPCA)
+
+# Generating the scree plot to explain the majority of variance in the data
+plot(measureRatesPCA, type = "lines", main = "")
+title("Scree Plot of PCA Measure Rates")
+
+```
+
+  
+## Q6. Clustering
+  * Perform hierarchical clustering on the data set. Plot the dendogram.  Notice that one cluster is on a leaf by itself.  Which item in the dataset is this?  Why do you think it is so separated from the others?
+  
+
+```{r}
+# load the necessary packages
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(plotrix)
+
+# Reading the dataset
+countryDemograhicsData <- read.csv("CountryDemographics2019.csv", header = TRUE, sep = ',')
+
+# Removing WesternEurope from the data frame
+countryDemograhicsData <- countryDemograhicsData[-8,]
+
+# Removing the Country column (not needed for clustering)
+clustCountryDemograhicsData <- countryDemograhicsData[, -1]
+
+# Set larger plot size
+options(repr.plot.width = 8, repr.plot.height = 6)
+
+# Perform hierarchical clustering using the ward.D2 linkage method
+hierarchialClusteredCountryDemograhicsData <- hclust(dist(clustCountryDemograhicsData), method = "ward.D2")
+
+# Plot the dendrogram with smaller label font size, empty main title, and rotated y-axis labels
+plot(hierarchialClusteredCountryDemograhicsData, cex = 0.8, main = "", xaxt = "n", yaxt = "n", xlab = "", sub = "")
+axis(side = 2, cex.axis = 0.8, las = 1)
+
+# Add a title and axis labels
+title("Dendrogram showing Hierarchical Clustering of Countries")
+xlabel <- "Country"
+axis(side = 1, at = 1:length(countryDemograhicsData$Country), labels = countryDemograhicsData$Country, tick = FALSE, las = 2, line = -0.5, cex.axis = 0.8)
+mtext(xlabel, side = 1, line = 4, cex = 0.8)
+
+
+
+```
+
+From the resulting dendrogram, we observe that Luxembourg is the item in the dataset that is on a leaf by itself suggesting us that Luxembourg is quite different from the other countries in terms of its demographic characteristics. The primary reason is that Luxembourg is a small country (in terms of population size, geographic area) with a high growth rate  compared to the other countries.
+
+
+## Q7. How certain are you which Start Wars character is the best? Consider the StarWars.csv (from FiveThirtyEight) dataset.
+* Read the file into R
+* Determine which partipants watched all 6 Star War movies.
+* From those repondants who watched all 6 movies - produce a visualization ranking the 6 movies (which expresses how certain you are of this ranking).
+* Produce a visualization that conveys the ranking of the characters in Star Wars, again expressing how certain you are of this ranking.
+
+
+```{r}
+# load the necessary packages
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(plotrix)
+
+# Reading the dataset
+starWarsData <- read.table("StarWars.csv", header = TRUE, sep = ',')
+head(starWarsData)
+#names(starWarsData)
+
+
+
+```
+
+
+

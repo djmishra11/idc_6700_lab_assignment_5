@@ -1,0 +1,9 @@
+Country,TotalPopulation,BirthRate,MortalityRate,LifeExpectancy,InfantMortalityRate,NoChildrenPerWoman,GrowthRate,PopulationAbove65perK
+Austria,8766.2,9.772,9.694,82.124,2.049,1.527,1.73,1717.53
+Belgium,11562.8,11.306,9.759,81.638,2.673,1.802,5.25,2193.02
+France,65480.7,11.568,9.086,83.033,2.725,1.971,3.73,13347.8
+Germany,82438.6,8.947,11.451,81.513,1.951,1.482,1.5,18050.8
+Luxembourg,596.992,11.426,7.242,82.266,2.747,1.605,11.41,87.621
+Netherlands,17132.9,10.625,8.816,82.3,2.38,1.754,2.82,3351.66
+Switzerland,8608.26,10.348,8.057,83.788,3.242,1.556,7.35,1622.67
+Western Europe,194664,10.224,10.079,82.164,2.399,1.694,2.89,40388.8
